@@ -40,7 +40,7 @@ render();
 $('#go').onclick=async()=>{
   $('#go').hidden=true;
   const v=$('#v');
-  v.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640}});
+  v.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640},audio:true});
   await v.play();
   try{await navigator.wakeLock.request('screen')}catch{}
   const W=640,H=Math.round(640*v.videoHeight/v.videoWidth)||480;
@@ -51,7 +51,7 @@ $('#go').onclick=async()=>{
   const stop=()=>rec&&rec.state!='inactive'&&rec.stop();
   const begin=()=>{
     chunks=[];start=Date.now();
-    rec=new MediaRecorder(big.captureStream(10));
+    const st=big.captureStream(10);v.srcObject.getAudioTracks().forEach(t=>st.addTrack(t));rec=new MediaRecorder(st);
     rec.ondataavailable=e=>chunks.push(e.data);
     rec.onstop=async()=>{await tx('readwrite',s=>s.put({t:start,b:new Blob(chunks,{type:'video/webm'})}));render()};
     rec.start(1000);
