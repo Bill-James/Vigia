@@ -16,7 +16,7 @@ video{width:100%;border-radius:8px;margin:8px 0}
 <button id="go">INICIAR VIGILÂNCIA</button>
 <div id="s">Parado</div>
 <video id="v" muted playsinline hidden></video>
-<label>Sensibilidade <input id="sens" type="range" min="1" max="20" value="3"></label>
+<label>Sensibilidade <input id="sens" type="range" min="1" max="20" value="18"></label>
 <h3>Gravações</h3>
 <div id="l"></div>
 <script>
@@ -64,11 +64,11 @@ $('#go').onclick=async()=>{
     sc.drawImage(v,0,0,32,24);
     const d=sc.getImageData(0,0,32,24).data;
     let n=0;
-    if(prev)for(let i=0;i<d.length;i+=4)if(Math.abs(d[i]+d[i+1]+d[i+2]-prev[i]-prev[i+1]-prev[i+2])>90)n++;
+    if(prev)for(let i=0;i<d.length;i+=4)if(Math.abs(d[i]+d[i+1]+d[i+2]-prev[i]-prev[i+1]-prev[i+2])>60)n++;
     prev=d;
     const left=Math.ceil((arm-now)/1000);
     if(left>0){$('#s').textContent='Sai do quarto: '+left+'s';return}
-    const moved=n/768*100>$('#sens').valueAsNumber;
+    const moved=n/768*100>21-$('#sens').valueAsNumber;
     if(moved){last=now;if(!rec||rec.state=='inactive')begin()}
     if(rec&&rec.state=='recording'&&(now-last>8000||now-start>120000))stop();
     $('#s').textContent=rec&&rec.state=='recording'?'● A GRAVAR':'A vigiar...';
