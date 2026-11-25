@@ -15,6 +15,7 @@ video{width:100%;border-radius:8px;margin:8px 0}
 </style>
 <button id="go">INICIAR VIGILÂNCIA</button>
 <div id="s">Parado</div>
+<button id="rb">Reiniciar</button> <button id="del">Apagar tudo</button>
 <video id="v" muted playsinline hidden></video>
 <label>Sensibilidade <input id="sens" type="range" min="1" max="20" value="18"></label>
 <h3>Gravações</h3>
@@ -31,7 +32,7 @@ async function render(){
   for(const x of all.slice(0,MAX)){
     const u=URL.createObjectURL(x.b),d=document.createElement('div');
     d.className='r';
-    d.innerHTML=`<div><span>${new Date(x.t).toLocaleString('pt-PT')}</span><a href="${u}" download="vigia-${x.t}.webm">Guardar</a><button>Apagar</button></div><video src="${u}" controls preload="none" style="width:100%"></video>`;
+    d.innerHTML=`<div><span>${new Date(x.t).toLocaleString('pt-PT')}</span><a href="${u}" download="vigia-${x.t}.${x.b.type.includes('mp4')?'mp4':'webm'}">Guardar</a><button>Apagar</button></div><video src="${u}" controls preload="none" style="width:100%"></video>`;
     d.querySelector('button').onclick=async()=>{await tx('readwrite',s=>s.delete(x.t));render()};
     $('#l').append(d);
   }
@@ -51,9 +52,9 @@ $('#go').onclick=async()=>{
   const stop=()=>rec&&rec.state!='inactive'&&rec.stop();
   const begin=()=>{
     chunks=[];start=Date.now();
-    const st=big.captureStream(10);v.srcObject.getAudioTracks().forEach(t=>st.addTrack(t));rec=new MediaRecorder(st);
+    const st=big.captureStream(10);v.srcObject.getAudioTracks().forEach(t=>st.addTrack(t));const mt=['video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm'].find(t=>MediaRecorder.isTypeSupported(t))||'';rec=new MediaRecorder(st,mt?{mimeType:mt}:{});
     rec.ondataavailable=e=>chunks.push(e.data);
-    rec.onstop=async()=>{await tx('readwrite',s=>s.put({t:start,b:new Blob(chunks,{type:'video/webm'})}));render()};
+    rec.onstop=async()=>{await tx('readwrite',s=>s.put({t:start,b:new Blob(chunks,{type:(mt||'video/webm').split(';')[0]})}));render()};
     rec.start(1000);
   };
   setInterval(()=>{
@@ -74,5 +75,8 @@ $('#go').onclick=async()=>{
     $('#s').textContent=rec&&rec.state=='recording'?'● A GRAVAR':'A vigiar...';
   },100);
 };
+$('#del').onclick=async()=>{if(confirm('Apagar TODAS as gravações?')){await tx('readwrite',s=>s.clear());render()}};
+$('#rb').onclick=()=>{sessionStorage.auto=1;location.reload()};
+if(sessionStorage.auto)$('#go').click();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 </script>
